@@ -103,6 +103,29 @@ class ExtractorService implements MusicService {
       return _searchByUrl(query);
     }
 
+    if (kIsWeb) {
+      try {
+        final yt = ytexp.YoutubeExplode();
+        final results = await yt.search.search(query);
+        final List<Track> tracks = [];
+        for (final v in results.whereType<ytexp.Video>()) {
+          tracks.add(Track()
+            ..youtubeId = v.id.value
+            ..id = v.id.value
+            ..title = _decodeHtml(v.title)
+            ..artist = _decodeHtml(v.author)
+            ..thumbnailUrl = v.thumbnails.highResUrl
+            ..durationMs = v.duration?.inMilliseconds ?? 0
+            ..trackType = 'extractor');
+        }
+        yt.close();
+        return tracks;
+      } catch (e) {
+        print('[Extractor Web] search error: $e');
+        return [];
+      }
+    }
+
     final List<Track> tracks = [];
     try {
       final yt = await YTMusic.create();
@@ -174,6 +197,26 @@ class ExtractorService implements MusicService {
 
   @override
   Future<List<AppPlaylist>> searchPlaylists(String query) async {
+    if (kIsWeb) {
+      try {
+        final yt = ytexp.YoutubeExplode();
+        final results = await yt.search.search(query);
+        final List<AppPlaylist> lists = [];
+        for (final p in results.whereType<ytexp.SearchPlaylist>()) {
+          lists.add(AppPlaylist()
+            ..id = p.id.value
+            ..title = _decodeHtml(p.title)
+            ..type = 'extractor'
+            ..thumbnailUrl = p.thumbnails.isNotEmpty ? p.thumbnails.last.url.toString() : '');
+        }
+        yt.close();
+        return lists;
+      } catch (e) {
+        print('[Extractor Web] searchPlaylists error: $e');
+        return [];
+      }
+    }
+
     try {
       final yt = await YTMusic.create();
       final results = await yt.search(query, filter: SearchFilter.playlists);
@@ -336,6 +379,30 @@ class ExtractorService implements MusicService {
         }
       }
 
+      if (kIsWeb) {
+        try {
+          final yt = ytexp.YoutubeExplode();
+          final playlist = await yt.playlists.get(id);
+          final videos = await yt.playlists.getVideos(id).toList();
+          final List<Track> tracks = [];
+          for (final v in videos) {
+            tracks.add(Track()
+              ..youtubeId = v.id.value
+              ..id = v.id.value
+              ..title = _decodeHtml(v.title)
+              ..artist = _decodeHtml(v.author)
+              ..durationMs = v.duration?.inMilliseconds ?? 0
+              ..thumbnailUrl = v.thumbnails.highResUrl
+              ..trackType = 'extractor');
+          }
+          yt.close();
+          return tracks;
+        } catch (e) {
+          print('[Extractor Web] getPlaylistTracks error: $e');
+          return [];
+        }
+      }
+
       final yt = await YTMusic.create();
 
       // Clean playlist ID from full URLs
@@ -450,6 +517,18 @@ class ExtractorService implements MusicService {
 
   @override
   Future<String?> getStreamUrl(String id) async {
+    if (kIsWeb) {
+      try {
+        final yt = ytexp.YoutubeExplode();
+        final manifest = await yt.videos.streamsClient.getManifest(id);
+        final audio = manifest.audioOnly.withHighestBitrate();
+        yt.close();
+        return audio.url.toString();
+      } catch (e) {
+        print('[Extractor Web] getStreamUrl error: $e');
+      }
+    }
+
     // Stage 1: Ultra-fast Native InnerTube API (Handles 80% of tracks instantly)
     try {
       final res = await _dio.post(

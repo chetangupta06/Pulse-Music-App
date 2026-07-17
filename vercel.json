@@ -5,6 +5,14 @@
       "destination": "https://music.youtube.com/:path*"
     },
     {
+      "source": "/api/yt/:path*",
+      "destination": "https://www.youtube.com/:path*"
+    },
+    {
+      "source": "/api/yti/:path*",
+      "destination": "https://youtubei.googleapis.com/:path*"
+    },
+    {
       "source": "/api/piped/:path*",
       "destination": "https://pipedapi.kavin.rocks/:path*"
     },
