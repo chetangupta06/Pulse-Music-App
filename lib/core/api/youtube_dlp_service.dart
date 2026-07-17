@@ -83,15 +83,17 @@ class YouTubeDlpService implements MusicService {
       try {
         final yt = ytexp.YoutubeExplode();
         final results = await yt.search.search(query);
-        for (final v in results.whereType<ytexp.Video>()) {
-          tracks.add(Track()
-            ..youtubeId = v.id.value
-            ..id = v.id.value
-            ..title = v.title
-            ..artist = v.author
-            ..thumbnailUrl = v.thumbnails.highResUrl
-            ..durationMs = v.duration?.inMilliseconds ?? 0
-            ..trackType = 'youtube');
+        for (final v in results) {
+          try {
+            tracks.add(Track()
+              ..youtubeId = v.id.value.toString()
+              ..id = v.id.value.toString()
+              ..title = v.title
+              ..artist = v.author
+              ..thumbnailUrl = v.thumbnails.isNotEmpty ? v.thumbnails.last.url.toString() : ''
+              ..durationMs = 0
+              ..trackType = 'youtube');
+          } catch(e) {}
         }
         yt.close();
         return tracks;
