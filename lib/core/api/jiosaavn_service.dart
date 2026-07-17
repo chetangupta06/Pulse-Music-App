@@ -29,7 +29,7 @@ class JioSaavnService implements MusicService {
               ..artist = _decodeHtml(v.author)
               ..thumbnailUrl = v.thumbnails.highResUrl.toString()
               ..durationMs = 0
-              ..trackType = 'jiosaavn');
+              ..trackType = 'youtube');
           } catch(e) {}
         }
         yt.close();
@@ -70,7 +70,7 @@ class JioSaavnService implements MusicService {
           lists.add(AppPlaylist()
             ..id = p.id.value
             ..title = p.title
-            ..type = 'jiosaavn'
+            ..type = 'youtube'
             ..thumbnailUrl = p.thumbnails.isNotEmpty ? p.thumbnails.last.url.toString() : '');
         }
         yt.close();

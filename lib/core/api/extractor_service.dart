@@ -520,15 +520,35 @@ class ExtractorService implements MusicService {
   @override
   Future<String?> getStreamUrl(String id) async {
     if (kIsWeb) {
-      try {
-        final yt = ytexp.YoutubeExplode();
-        final manifest = await yt.videos.streamsClient.getManifest(id);
-        final audio = manifest.audioOnly.withHighestBitrate();
-        yt.close();
-        return audio.url.toString();
-      } catch (e) {
-        print('[Extractor Web] getStreamUrl error: $e');
+      final List<String> activeMirrors = [
+        'https://pipedapi.kavin.rocks',
+        'https://pipedapi.in.projectsegfau.lt',
+        'https://pipedapi.adminforge.de',
+        'https://pipedapi.tokhmi.xyz',
+        'https://pipedapi.lunar.icu',
+        'https://pipedapi.smnz.de',
+      ];
+      final completer = Completer<String?>();
+      int errors = 0;
+      for (final mirror in activeMirrors) {
+        _dio.get('$mirror/streams/$id').then((res) {
+          if (res.statusCode == 200 && res.data != null) {
+            final audioStreams = res.data['audioStreams'] as List?;
+            if (audioStreams != null && audioStreams.isNotEmpty) {
+              audioStreams.sort((a, b) => ((b['bitrate'] ?? 0) as int).compareTo((a['bitrate'] ?? 0) as int));
+              final url = audioStreams.first['url']?.toString();
+              if (url != null && !completer.isCompleted) {
+                print('[Extractor Web] Stream via Piped: $url');
+                completer.complete(url);
+              }
+            }
+          }
+        }).catchError((_) {
+          errors++;
+          if (errors == activeMirrors.length && !completer.isCompleted) completer.complete(null);
+        });
       }
+      return completer.future;
     }
 
     // Stage 1: Ultra-fast Native InnerTube API (Handles 80% of tracks instantly)
