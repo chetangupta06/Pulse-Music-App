@@ -10,7 +10,6 @@ import 'features/downloads/downloads_screen.dart';
 import 'features/player/bottom_player.dart';
 import 'core/db/isar_db.dart';
 import 'core/providers.dart';
-import 'core/audio/audio_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/favorites/favorites_screen.dart';
@@ -28,12 +27,9 @@ void main() async {
   await IsarDb.instance.init();
   final prefs = await SharedPreferences.getInstance();
 
-  final audioHandler = DesiAudioHandler();
-
   runApp(
     ProviderScope(
       overrides: [
-        audioHandlerProvider.overrideWithValue(audioHandler),
         sharedPrefsProvider.overrideWithValue(prefs),
       ],
       child: const PULSEApp(),
