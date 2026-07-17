@@ -9,6 +9,8 @@ import 'package:ytmusicapi_dart/enums.dart';
 import '../models/track.dart';
 import '../models/app_playlist.dart';
 import 'music_service.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart' as ytexp;
+import 'extractor_service.dart'; // for _decodeHtml
 
 class YouTubeDlpService implements MusicService {
   File? _binary;
@@ -77,6 +79,28 @@ class YouTubeDlpService implements MusicService {
   Future<List<Track>> search(String query) async {
     final List<Track> tracks = [];
     
+    if (kIsWeb) {
+      try {
+        final yt = ytexp.YoutubeExplode();
+        final results = await yt.search.search(query);
+        for (final v in results.whereType<ytexp.Video>()) {
+          tracks.add(Track()
+            ..youtubeId = v.id.value
+            ..id = v.id.value
+            ..title = v.title
+            ..artist = v.author
+            ..thumbnailUrl = v.thumbnails.highResUrl
+            ..durationMs = v.duration?.inMilliseconds ?? 0
+            ..trackType = 'youtube');
+        }
+        yt.close();
+        return tracks;
+      } catch (e) {
+        print('[YTDLP Web] search error: $e');
+        return [];
+      }
+    }
+
     // For direct URLs, fall back to shell metadata extraction safely.
     if (query.startsWith('http') || query.startsWith('www.')) {
       if (_binary == null || !await _binary!.exists()) return [];
@@ -208,6 +232,18 @@ class YouTubeDlpService implements MusicService {
 
   @override
   Future<String?> getStreamUrl(String id) async {
+    if (kIsWeb) {
+      try {
+        final yt = ytexp.YoutubeExplode();
+        final manifest = await yt.videos.streamsClient.getManifest(id);
+        final audio = manifest.audioOnly.withHighestBitrate();
+        yt.close();
+        return audio.url.toString();
+      } catch (e) {
+        print('[YTDLP Web] getStreamUrl error: $e');
+      }
+    }
+
     // Stage 1: Ultra-fast Native InnerTube API (Handles 80% of tracks instantly)
     try {
       final res = await _dio.post(
@@ -362,6 +398,26 @@ class YouTubeDlpService implements MusicService {
 
   @override
   Future<List<AppPlaylist>> searchPlaylists(String query) async {
+    if (kIsWeb) {
+      try {
+        final yt = ytexp.YoutubeExplode();
+        final results = await yt.search.search(query);
+        final List<AppPlaylist> lists = [];
+        for (final p in results.whereType<ytexp.SearchPlaylist>()) {
+          lists.add(AppPlaylist()
+            ..id = p.id.value
+            ..title = p.title
+            ..type = 'youtube'
+            ..thumbnailUrl = p.thumbnails.isNotEmpty ? p.thumbnails.last.url.toString() : '');
+        }
+        yt.close();
+        return lists;
+      } catch (e) {
+        print('[YTDLP Web] searchPlaylists error: $e');
+        return [];
+      }
+    }
+
     // yt-dlp typically extracts strictly bounded items cleanly. 
      try {
        final yt = await YTMusic.create();
@@ -384,6 +440,29 @@ class YouTubeDlpService implements MusicService {
 
   @override
   Future<List<Track>> getPlaylistTracks(String id) async {
+    if (kIsWeb) {
+      try {
+        final yt = ytexp.YoutubeExplode();
+        final videos = await yt.playlists.getVideos(id).toList();
+        final List<Track> tracks = [];
+        for (final v in videos) {
+          tracks.add(Track()
+            ..youtubeId = v.id.value
+            ..id = v.id.value
+            ..title = v.title
+            ..artist = v.author
+            ..durationMs = v.duration?.inMilliseconds ?? 0
+            ..thumbnailUrl = v.thumbnails.highResUrl
+            ..trackType = 'youtube');
+        }
+        yt.close();
+        return tracks;
+      } catch (e) {
+        print('[YTDLP Web] getPlaylistTracks error: $e');
+        return [];
+      }
+    }
+
       try {
           if (id.startsWith('MPSP')) {
             // Podcast browse IDs use a different response structure than regular playlists.
