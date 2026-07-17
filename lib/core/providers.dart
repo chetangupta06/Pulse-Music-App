@@ -142,7 +142,9 @@ final downloadServiceProvider = Provider<DownloadService>((ref) {
 // The Music Service multiplexer — switches between Extractor (default) and YouTube/yt-dlp
 final musicServiceProvider = Provider<MusicService>((ref) {
   final source = ref.watch(settingsProvider).musicSource;
-  if (source == 'youtube') {
+  if (kIsWeb || source == 'jiosaavn') {
+    return ref.watch(jiosaavnServiceProvider);
+  } else if (source == 'youtube') {
     return ref.watch(ytdlpServiceProvider);
   } else if (source == 'jiosaavn') {
     return ref.watch(jiosaavnServiceProvider);
