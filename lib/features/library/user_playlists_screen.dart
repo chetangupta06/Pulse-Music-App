@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/app_playlist.dart';
 import '../../core/providers.dart';
+import '../../core/providers/app_providers.dart';
+import '../../shared/widgets/now_playing_wave.dart' as pulse_wave;
 import '../../shared/theme/app_theme.dart';
 import '../../shared/widgets/scrollable_track_row.dart';
 
@@ -225,7 +227,35 @@ class _UserPlaylistsScreenState extends ConsumerState<UserPlaylistsScreen> {
                    final t = playlist.tracks![index];
                    final onSurface = Theme.of(context).colorScheme.onSurface;
                    return ListTile(
-                     leading: ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(t.thumbnailUrl, width: 48, height: 48, fit: BoxFit.cover)),
+                     leading: SizedBox(
+                       width: 48, height: 48,
+                       child: Stack(
+                         children: [
+                           ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(t.thumbnailUrl, width: 48, height: 48, fit: BoxFit.cover)),
+                           Consumer(
+                             builder: (context, ref, child) {
+                               final currentTrack = ref.watch(currentTrackProvider);
+                               final isPlayingAsync = ref.watch(playbackStateProvider);
+                               final isThisTrack = currentTrack?.youtubeId == t.youtubeId;
+                               final isPlaying = isPlayingAsync.valueOrNull ?? false;
+                               
+                               if (isThisTrack) {
+                                 return Container(
+                                   decoration: BoxDecoration(
+                                     color: Colors.black.withOpacity(0.6),
+                                     borderRadius: BorderRadius.circular(8),
+                                   ),
+                                   child: Center(
+                                     child: pulse_wave.NowPlayingWave(isPlaying: isPlaying, color: Colors.white, size: 16),
+                                   ),
+                                 );
+                               }
+                               return const SizedBox();
+                             },
+                           ),
+                         ],
+                       ),
+                     ),
                      title: Text(t.title, style: TextStyle(color: onSurface, fontWeight: FontWeight.bold)),
                      subtitle: Text(t.artist, style: TextStyle(color: onSurface.withOpacity(0.5))),
                      trailing: IconButton(

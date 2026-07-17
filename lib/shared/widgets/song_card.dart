@@ -5,6 +5,7 @@ import '../../core/models/song.dart';
 import '../../core/providers/app_providers.dart';
 import '../../utils/formatters.dart';
 import 'desi_card.dart';
+import 'now_playing_wave.dart';
 
 class SongCard extends ConsumerWidget {
   const SongCard({
@@ -80,6 +81,30 @@ class SongCard extends ConsumerWidget {
                         ),
                       ],
                     ),
+                  ),
+                  
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final currentTrack = ref.watch(currentTrackProvider);
+                      final isPlayingAsync = ref.watch(playbackStateProvider);
+                      final isThisTrack = currentTrack?.youtubeId == song.id;
+                      final isPlaying = isPlayingAsync.valueOrNull ?? false;
+                      
+                      if (isThisTrack) {
+                        return Positioned(
+                          bottom: 12, right: 12,
+                          child: Container(
+                             padding: const EdgeInsets.all(8),
+                             decoration: BoxDecoration(
+                               color: Colors.black.withOpacity(0.6),
+                               shape: BoxShape.circle,
+                             ),
+                             child: NowPlayingWave(isPlaying: isPlaying, color: Colors.white, size: 16),
+                          ),
+                        );
+                      }
+                      return const SizedBox();
+                    },
                   ),
                 ],
               ),
