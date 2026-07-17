@@ -1,5 +1,6 @@
 import 'package:universal_io/io.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:audiotags/audiotags.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ytmusicapi_dart/ytmusicapi_dart.dart';
@@ -49,6 +50,10 @@ final downloadsStreamProvider = StreamProvider<List<Track>>((ref) async* {
       final prefs = await ref.read(sharedPrefsProvider);
       final customPath = prefs.getString('download_path');
       
+      if (kIsWeb) {
+        yield dbTracks;
+        continue;
+      }
       late Directory desiDir;
       if (customPath != null && customPath.isNotEmpty) {
         desiDir = Directory(customPath);

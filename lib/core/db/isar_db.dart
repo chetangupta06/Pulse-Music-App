@@ -1,6 +1,7 @@
 import 'package:universal_io/io.dart';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
 import '../models/track.dart';
 import '../models/app_playlist.dart';
 
@@ -8,18 +9,21 @@ class IsarDb {
   static final IsarDb instance = IsarDb._internal();
   IsarDb._internal();
 
-  late File _file;
-  late File _playlistFile;
+  File? _file;
+  File? _playlistFile;
   List<Track> _cache = [];
   List<AppPlaylist> _playlistCache = [];
 
   Future<void> init() async {
+    if (kIsWeb) {
+      print('IsarDb initialized on Web (in-memory mode).');
+      return;
+    }
     final dir = await getApplicationDocumentsDirectory();
     _file = File('${dir.path}/desi_db.json');
     _playlistFile = File('${dir.path}/desi_db_playlists.json');
-    _file = File('${dir.path}/desi_db.json');
-    if (await _file.exists()) {
-      final text = await _file.readAsString();
+    if (await _file!.exists()) {
+      final text = await _file!.readAsString();
       if (text.isNotEmpty) {
         try {
           final List decoded = jsonDecode(text);
@@ -31,8 +35,8 @@ class IsarDb {
       }
     }
     
-    if (await _playlistFile.exists()) {
-      final text = await _playlistFile.readAsString();
+    if (await _playlistFile!.exists()) {
+      final text = await _playlistFile!.readAsString();
       if (text.isNotEmpty) {
         try {
           final List decoded = jsonDecode(text);
@@ -60,7 +64,7 @@ class IsarDb {
     if (cleaned.length != _cache.length) {
       print('DB cleanup: removed ${_cache.length - cleaned.length} duplicate entries');
       _cache = cleaned;
-      await _write();
+      await _saveToFile();
     }
   }
 
@@ -80,16 +84,28 @@ class IsarDb {
       }
       track.isDownloaded = false;
       track.localPath = null;
-      await _write();
+      await _saveToFile();
     }
   }
 
-  Future<void> _write() async {
-    await _file.writeAsString(jsonEncode(_cache.map((e) => e.toJson()).toList()));
+  Future<void> _saveToFile() async {
+    if (kIsWeb || _file == null) return;
+    try {
+      final text = jsonEncode(_cache.map((e) => e.toJson()).toList());
+      await _file!.writeAsString(text);
+    } catch (e) {
+      print('DB save error: $e');
+    }
   }
 
-  Future<void> _writePlaylists() async {
-    await _playlistFile.writeAsString(jsonEncode(_playlistCache.map((e) => e.toJson()).toList()));
+  Future<void> _savePlaylistsToFile() async {
+    if (kIsWeb || _playlistFile == null) return;
+    try {
+      final text = jsonEncode(_playlistCache.map((e) => e.toJson()).toList());
+      await _playlistFile!.writeAsString(text);
+    } catch (e) {
+      print('DB playlist save error: $e');
+    }
   }
 
   // --- PLAYLIST LOGIC ---
@@ -100,19 +116,19 @@ class IsarDb {
     } else {
       _playlistCache.add(p);
     }
-    await _writePlaylists();
+    await _savePlaylistsToFile();
   }
 
   Future<void> removePlaylist(String id) async {
     _playlistCache.removeWhere((x) => x.id == id);
-    await _writePlaylists();
+    await _savePlaylistsToFile();
   }
 
   Future<void> renamePlaylist(String id, String newName) async {
     final idx = _playlistCache.indexWhere((x) => x.id == id);
     if (idx != -1) {
       _playlistCache[idx].title = newName;
-      await _writePlaylists();
+      await _savePlaylistsToFile();
     }
   }
 
@@ -127,7 +143,7 @@ class IsarDb {
       ..type = 'user'
       ..tracks = [];
     _playlistCache.add(p);
-    await _writePlaylists();
+    await _savePlaylistsToFile();
   }
 
   Future<void> addTrackToPlaylist(String playlistId, Track track) async {
@@ -137,7 +153,7 @@ class IsarDb {
       p.tracks ??= [];
       if (!p.tracks!.any((t) => t.youtubeId == track.youtubeId)) {
         p.tracks!.add(track);
-        await _writePlaylists();
+        await _savePlaylistsToFile();
       }
     }
   }
@@ -147,7 +163,7 @@ class IsarDb {
     if (idx != -1) {
       final p = _playlistCache[idx];
       p.tracks?.removeWhere((t) => t.youtubeId == trackId);
-      await _writePlaylists();
+      await _savePlaylistsToFile();
     }
   }
 
@@ -167,7 +183,7 @@ class IsarDb {
     if (_cache.where((t) => t.trackType == 'history').length > 50) {
       _cache.removeLast(); // Keep size bounded
     }
-    await _write();
+    await _saveToFile();
   }
 
   List<String> getPodcastRecommendations() {
@@ -241,7 +257,7 @@ class IsarDb {
     } else {
       _cache.add(track);
     }
-    await _write();
+    await _saveToFile();
   }
 
   Future<void> toggleFavorite(Track track) async {
@@ -269,7 +285,7 @@ class IsarDb {
         _cache.add(newTrack);
       }
     }
-    await _write();
+    await _saveToFile();
   }
 
   Stream<List<Track>> watchFavorites() async* {
