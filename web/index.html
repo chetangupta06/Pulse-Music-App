@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="desi_chaska">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>desi_chaska</title>
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <!-- CORS Interceptor for Vercel Proxy -->
+  <script>
+    const originalFetch = window.fetch;
+    window.fetch = function() {
+      if (typeof arguments[0] === 'string') {
+        arguments[0] = arguments[0].replace('https://music.youtube.com', '/api/youtube');
+        arguments[0] = arguments[0].replace('https://pipedapi.kavin.rocks', '/api/piped');
+        arguments[0] = arguments[0].replace('https://www.jiosaavn.com', '/api/saavn');
+      }
+      return originalFetch.apply(this, arguments);
+    };
+    const originalXHROpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function() {
+      if (typeof arguments[1] === 'string') {
+        arguments[1] = arguments[1].replace('https://music.youtube.com', '/api/youtube');
+        arguments[1] = arguments[1].replace('https://pipedapi.kavin.rocks', '/api/piped');
+        arguments[1] = arguments[1].replace('https://www.jiosaavn.com', '/api/saavn');
+      }
+      return originalXHROpen.apply(this, arguments);
+    };
+  </script>
+  
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

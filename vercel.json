@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/youtube/:path*",
+      "destination": "https://music.youtube.com/:path*"
+    },
+    {
+      "source": "/api/piped/:path*",
+      "destination": "https://pipedapi.kavin.rocks/:path*"
+    },
+    {
+      "source": "/api/saavn/:path*",
+      "destination": "https://www.jiosaavn.com/:path*"
+    }
+  ]
+}
