@@ -115,7 +115,7 @@ class ExtractorService implements MusicService {
               ..id = v.id.value.toString()
               ..title = _decodeHtml(v.title)
               ..artist = _decodeHtml(v.author)
-              ..thumbnailUrl = v.thumbnails.isNotEmpty ? v.thumbnails.last.url.toString() : ''
+              ..thumbnailUrl = v.thumbnails.highResUrl.toString()
               ..durationMs = 0
               ..trackType = 'extractor');
           } catch(e) {}

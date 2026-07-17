@@ -90,7 +90,7 @@ class YouTubeDlpService implements MusicService {
               ..id = v.id.value.toString()
               ..title = v.title
               ..artist = v.author
-              ..thumbnailUrl = v.thumbnails.isNotEmpty ? v.thumbnails.last.url.toString() : ''
+              ..thumbnailUrl = v.thumbnails.highResUrl.toString()
               ..durationMs = 0
               ..trackType = 'youtube');
           } catch(e) {}
