@@ -282,13 +282,7 @@ class YouTubeDlpService implements MusicService {
 
     try {
       final List<String> activeMirrors = [
-        'https://pipedapi.kavin.rocks',
-        'https://pipedapi.in.projectsegfau.lt',
-        'https://pipedapi.adminforge.de',
-        'https://pipedapi.tokhmi.xyz',
-        'https://pipedapi.lunar.icu',
-        'https://pipedapi.smnz.de',
-        'https://piped-api.garudalinux.org',
+        'https://api.piped.private.coffee'
       ];
 
       final completer = Completer<String?>();

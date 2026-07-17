@@ -411,7 +411,8 @@ class QueueNotifier extends Notifier<List<Track>> {
           if (kIsWeb && track.trackType != 'jiosaavn' && track.trackType != 'podcast') {
             print('[Web Smart Resolver] Attempting to resolve via JioSaavn CDN...');
             try {
-              final query = "${track.title} ${track.artist}".trim();
+              final cleanTitle = track.title.replaceAll(RegExp(r'\(.*?\)'), '').replaceAll(RegExp(r'\[.*?\]'), '').split('-').first.trim();
+              final query = "$cleanTitle ${track.artist}".trim();
               final jioApi = ref.read(jiosaavnServiceProvider);
               final jioResults = await jioApi.search(query);
               if (jioResults.isNotEmpty) {
@@ -475,7 +476,8 @@ class QueueNotifier extends Notifier<List<Track>> {
       String? url;
       if (kIsWeb && track.trackType != 'jiosaavn' && track.trackType != 'podcast') {
         try {
-          final query = "${track.title} ${track.artist}".trim();
+          final cleanTitle = track.title.replaceAll(RegExp(r'\(.*?\)'), '').replaceAll(RegExp(r'\[.*?\]'), '').split('-').first.trim();
+          final query = "$cleanTitle ${track.artist}".trim();
           final jioApi = ref.read(jiosaavnServiceProvider);
           final jioResults = await jioApi.search(query);
           if (jioResults.isNotEmpty) {
