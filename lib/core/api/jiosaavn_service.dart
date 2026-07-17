@@ -15,30 +15,6 @@ class JioSaavnService implements MusicService {
 
   @override
   Future<List<Track>> search(String query) async {
-    if (kIsWeb) {
-      try {
-        final yt = ytexp.YoutubeExplode();
-        final results = await yt.search.search(query);
-        final List<Track> tracks = [];
-        for (final v in results) {
-          try {
-            tracks.add(Track()
-              ..youtubeId = v.id.value.toString()
-              ..id = v.id.value.toString()
-              ..title = _decodeHtml(v.title)
-              ..artist = _decodeHtml(v.author)
-              ..thumbnailUrl = v.thumbnails.highResUrl.toString()
-              ..durationMs = 0
-              ..trackType = 'youtube');
-          } catch(e) {}
-        }
-        yt.close();
-        return tracks;
-      } catch (e) {
-        return [];
-      }
-    }
-
     try {
       final res = await _client.search.songs(query);
       if (res == null || res.results.isEmpty) return [];
@@ -61,23 +37,6 @@ class JioSaavnService implements MusicService {
 
   @override
   Future<List<AppPlaylist>> searchPlaylists(String query) async {
-    if (kIsWeb) {
-      try {
-        final yt = ytexp.YoutubeExplode();
-        final results = await yt.search.search(query);
-        final List<AppPlaylist> lists = [];
-        for (final p in results.whereType<ytexp.SearchPlaylist>()) {
-          lists.add(AppPlaylist()
-            ..id = p.id.value
-            ..title = p.title
-            ..type = 'youtube'
-            ..thumbnailUrl = p.thumbnails.isNotEmpty ? p.thumbnails.last.url.toString() : '');
-        }
-        yt.close();
-        return lists;
-      } catch(e) {}
-    }
-
     try {
       final url = Uri.parse('https://www.jiosaavn.com/api.php?__call=search.getPlaylistResults&q=$query&_format=json&_marker=0&api_version=4&ctx=web6dot0&n=10');
       final res = await http.get(url);

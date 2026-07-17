@@ -397,10 +397,38 @@ class QueueNotifier extends Notifier<List<Track>> {
         streamUrl = track.youtubeId;
       } else {
         try {
-          final MusicService api = track.trackType == 'youtube'
-              ? ref.read(ytdlpServiceProvider)
-              : ref.read(extractorServiceProvider);
-          streamUrl = await api.getStreamUrl(track.youtubeId);
+          final MusicService api;
+          if (track.trackType == 'jiosaavn') {
+            api = ref.read(jiosaavnServiceProvider);
+          } else if (track.trackType == 'youtube') {
+            api = ref.read(ytdlpServiceProvider);
+          } else {
+            api = ref.read(extractorServiceProvider);
+          }
+
+          // Smart Web Resolver: JioSaavn's Akamai CDN has ZERO CORS or IP-binding issues. 
+          // For web YouTube tracks, we transparently search and stream from JioSaavn FIRST!
+          if (kIsWeb && track.trackType != 'jiosaavn' && track.trackType != 'podcast') {
+            print('[Web Smart Resolver] Attempting to resolve via JioSaavn CDN...');
+            try {
+              final query = "${track.title} ${track.artist}".trim();
+              final jioApi = ref.read(jiosaavnServiceProvider);
+              final jioResults = await jioApi.search(query);
+              if (jioResults.isNotEmpty) {
+                 streamUrl = await jioApi.getStreamUrl(jioResults.first.id);
+                 if (streamUrl != null) {
+                   print('[Web Smart Resolver] Success! Stream re-routed to JioSaavn.');
+                 }
+              }
+            } catch (e) {
+              print('[Web Smart Resolver] Failed to resolve on JioSaavn: $e');
+            }
+          }
+
+          if (streamUrl == null) {
+            streamUrl = await api.getStreamUrl(track.youtubeId);
+          }
+
           if (streamUrl != null) _urlCache[track.youtubeId] = streamUrl;
         } catch (e) {
           print('Direct stream fetch failed: $e');
@@ -435,13 +463,34 @@ class QueueNotifier extends Notifier<List<Track>> {
   Future<void> preWarmLink(Track track) async {
     if (_urlCache.containsKey(track.youtubeId)) return;
     try {
-      final MusicService api = track.trackType == 'youtube'
-          ? ref.read(ytdlpServiceProvider)
-          : ref.read(extractorServiceProvider);
-      final url = await api.getStreamUrl(track.youtubeId);
+      final MusicService api;
+      if (track.trackType == 'jiosaavn') {
+        api = ref.read(jiosaavnServiceProvider);
+      } else if (track.trackType == 'youtube') {
+        api = ref.read(ytdlpServiceProvider);
+      } else {
+        api = ref.read(extractorServiceProvider);
+      }
+
+      String? url;
+      if (kIsWeb && track.trackType != 'jiosaavn' && track.trackType != 'podcast') {
+        try {
+          final query = "${track.title} ${track.artist}".trim();
+          final jioApi = ref.read(jiosaavnServiceProvider);
+          final jioResults = await jioApi.search(query);
+          if (jioResults.isNotEmpty) {
+             url = await jioApi.getStreamUrl(jioResults.first.id);
+          }
+        } catch (e) {}
+      }
+
+      if (url == null) {
+        url = await api.getStreamUrl(track.youtubeId);
+      }
+      
       if (url != null) {
         _urlCache[track.youtubeId] = url;
-        print('[Extractor] Pre-warmed link for: ${track.title}');
+        print('[Providers] Pre-warmed link for: ${track.title}');
       }
     } catch (e) {}
   }
