@@ -45,7 +45,7 @@ dependencies:
   media_kit_libs_video: ^1.0.7
   shared_preferences: ^2.5.5
   file_picker: ^10.3.10
-  youtube_explode_dart: ^3.0.5
+  youtube_explode_dart: ^3.1.0
   ytmusicapi_dart: ^2.3.0
   jiosaavn: ^0.1.1
   shimmer: ^3.0.0
