@@ -325,6 +325,24 @@ class YouTubeDlpService implements MusicService {
       print('Fast Piped API concurrent mirrors failed, falling back to local YT-DLP: $e');
     }
 
+    // Stage 3 (Web Only): YoutubeExplode Deciphering wrapped in Edge Proxy
+    if (kIsWeb) {
+      try {
+        print('[YTDLP] Attempting Stage 3 Web Fallback (youtube_explode_dart)...');
+        final yt = ytexp.YoutubeExplode();
+        final manifest = await yt.videos.streamsClient.getManifest(id);
+        final audio = manifest.audioOnly.withHighestBitrate();
+        yt.close();
+        final decipheredUrl = audio.url.toString();
+        if (decipheredUrl.isNotEmpty) {
+          print('[YTDLP] Stage 3 Success! Wrapping deciphered URL in Edge Proxy.');
+          return '/api/stream?url=${Uri.encodeComponent(decipheredUrl)}';
+        }
+      } catch (e) {
+        print('[YTDLP] Stage 3 Web Fallback failed: $e');
+      }
+    }
+
     // 2. STABLE NATIVE FALLBACK: YT-DLP Shell Process
     if (!kIsWeb) {
       await _ensureBinaryExists();

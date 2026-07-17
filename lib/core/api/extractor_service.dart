@@ -628,7 +628,25 @@ class ExtractorService implements MusicService {
       print('[Extractor] All concurrent proxies failed: $e');
     }
 
-    // Stage 3: yt-dlp native process fallback (Most reliable, but slowest)
+    // Stage 3 (Web Only): YoutubeExplode Deciphering wrapped in Edge Proxy
+    if (kIsWeb) {
+      try {
+        print('[Extractor] Attempting Stage 3 Web Fallback (youtube_explode_dart)...');
+        final yt = ytexp.YoutubeExplode();
+        final manifest = await yt.videos.streamsClient.getManifest(id);
+        final audio = manifest.audioOnly.withHighestBitrate();
+        yt.close();
+        final decipheredUrl = audio.url.toString();
+        if (decipheredUrl.isNotEmpty) {
+          print('[Extractor] Stage 3 Success! Wrapping deciphered URL in Edge Proxy.');
+          return '/api/stream?url=${Uri.encodeComponent(decipheredUrl)}';
+        }
+      } catch (e) {
+        print('[Extractor] Stage 3 Web Fallback failed: $e');
+      }
+    }
+
+    // Stage 4: yt-dlp native process fallback (Most reliable, but slowest)
     if (!kIsWeb) {
       await _ensureBinaryExists();
       if (_binary != null && await _binary!.exists()) {
