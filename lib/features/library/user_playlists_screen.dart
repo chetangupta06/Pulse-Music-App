@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/app_playlist.dart';
 import '../../core/providers.dart';
-import '../../core/providers/app_providers.dart';
 import '../../shared/widgets/now_playing_wave.dart' as pulse_wave;
 import '../../shared/theme/app_theme.dart';
 import '../../shared/widgets/scrollable_track_row.dart';

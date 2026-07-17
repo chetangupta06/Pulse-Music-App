@@ -8,6 +8,7 @@ import 'package:ytmusicapi_dart/enums.dart';
 import 'package:media_kit/media_kit.dart' hide Track;
 import 'models/track.dart';
 import 'models/app_playlist.dart';
+import 'audio/audio_handler.dart';
 import 'api/extractor_service.dart';
 import 'api/youtube_dlp_service.dart';
 import 'api/music_service.dart';
@@ -141,9 +142,9 @@ final downloadServiceProvider = Provider<DownloadService>((ref) {
 // The Music Service multiplexer — switches between Extractor (default) and YouTube/yt-dlp
 final musicServiceProvider = Provider<MusicService>((ref) {
   final source = ref.watch(settingsProvider).musicSource;
-  if (source == 'youtube') {
-    return ref.watch(ytdlpServiceProvider);
-  } else if (source == 'jiosaavn') {
+  if (kIsWeb || source == 'jiosaavn') {
+    return ref.watch(jiosaavnServiceProvider);
+  } else if (source == 'youtube') {
     return ref.watch(ytdlpServiceProvider);
   } else if (source == 'jiosaavn') {
     return ref.watch(jiosaavnServiceProvider);
@@ -299,6 +300,11 @@ final searchFilterProvider = NotifierProvider<SearchFilterNotifier, String>(() =
 final searchSuggestionsProvider = FutureProvider.family<List<String>, String>((ref, query) async {
   if (query.trim().isEmpty) return [];
   return await ref.watch(musicServiceProvider).getSearchSuggestions(query);
+});
+
+// Provides the singleton audio handler
+final audioHandlerProvider = Provider<DesiAudioHandler>((ref) {
+  throw UnimplementedError(); // Initialized in main.dart
 });
 
 // Provides dynamic sequential playback and history routing
